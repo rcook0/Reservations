@@ -1,0 +1,8 @@
+flowchart TD
+    Airline -->|Operates| Flight
+    Flight -->|Scheduled| Departure
+    Departure -->|Maps| Seat
+    Passenger -->|Reserves| Seat
+    Fare -->|Allocated| Seat
+    Fare -->|Offered| Season
+    Flight -->|Stops| Airport
