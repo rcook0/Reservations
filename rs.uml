@@ -1,0 +1,66 @@
++------------------+
+|      Airline     |
++------------------+
+| code: CHAR(2) PK |
+| name: VARCHAR    |
++------------------+
+          |
+          | 1:N
+          |
++------------------+
+|      Flight      |
++------------------+
+| airline_code: FK |
+| flight_number PK |
+| aircraft         |
+| departure_airport|
+| departure_time   |
+| arrival_airport  |
+| arrival_time     |
+| mileage          |
+| smoking          |
++------------------+
+          |
+          | 1:N
+          |
++------------------+
+|    Departure     |
++------------------+
+| date PK          |
+| airline_code FK  |
+| flight_number FK |
+| time             |
+| aircraft         |
++------------------+
+          |
+          | 1:N
+          |
++------------------+
+|       Seat       |
++------------------+
+| departure_date FK|
+| airline_code FK  |
+| flight_number FK |
+| seat_number PK   |
+| basis_code       |
+| for_sale         |
+| vacant           |
++------------------+
+          |
+          | N:1
+          |
++------------------+
+|    Passenger     |
++------------------+
+| id PK            |
+| forename         |
+| surname          |
++------------------+
+
+Other tables:
+- Airport(code PK, name, city, country)
+- Fare(basis_code PK, airline_code FK, basis_class, single, return, carriage_class, name, currency)
+- Season(code PK, start, end)
+- Stops(flight_number FK, airport_code FK)
+- Reserves(passenger_id FK, departure_date FK, airline_code FK, flight_number FK, seat_number FK)
+- Offered(basis_code FK, airline_code FK, season_code FK)
