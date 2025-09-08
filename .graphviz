@@ -1,0 +1,20 @@
+digraph AirlineReservation {
+    node [shape=box, style=filled, color=lightgrey];
+
+    Airline -> Flight [label="Operates"];
+    Flight -> Departure [label="Scheduled"];
+    Departure -> Seat [label="Maps"];
+    Passenger -> Seat [label="Reserves"];
+    Fare -> Seat [label="Allocated"];
+    Fare -> Season [label="Offered"];
+    Flight -> Airport [label="Stops"];
+
+    Airline [label="Airline\n(code, name)"];
+    Flight [label="Flight\n(airline_code, flight_number, aircraft, departure_airport, departure_time, arrival_airport, arrival_time, mileage, smoking)"];
+    Departure [label="Departure\n(date, airline_code, flight_number, time, aircraft)"];
+    Seat [label="Seat\n(departure_date, airline_code, flight_number, seat_number, basis_code, for_sale, vacant)"];
+    Passenger [label="Passenger\n(id, forename, surname)"];
+    Fare [label="Fare\n(basis_code, airline_code, basis_class, single, return, carriage_class, name, currency)"];
+    Season [label="Season\n(code, start, end)"];
+    Airport [label="Airport\n(code, name, city, country)"];
+}
