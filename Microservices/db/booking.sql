@@ -12,3 +12,14 @@ CREATE TABLE outbox (
   payload JSON,
   published BOOLEAN DEFAULT 0
 );
+
+CREATE TABLE passenger (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  forename VARCHAR(50),
+  surname VARCHAR(50)
+);
+
+-- Seed passengers
+INSERT INTO passenger (forename, surname) VALUES
+('Alice', 'Smith'),
+('Bob', 'Johnson');
