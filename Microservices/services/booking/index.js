@@ -44,6 +44,10 @@ app.get("/reservations/:id", async (req, res) => {
   res.json(rows[0]);
 });
 
+app.get("/passengers", async (req, res) => {
+  const [rows] = await db.query("SELECT * FROM passenger");
+  res.json(rows);
+});
 
 // Start consumer for payment events
 startPaymentConsumer();
