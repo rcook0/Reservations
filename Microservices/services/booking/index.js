@@ -16,6 +16,7 @@ const db = await mysql.createPool({
 
 const kafka = new Kafka({ brokers: process.env.KAFKA_BROKERS.split(",") });
 
+// Create a reservation (PENDING)
 app.post("/reservations", async (req, res) => {
   const { passenger_id, flight_number, seat_number } = req.body;
   try {
@@ -31,6 +32,7 @@ app.post("/reservations", async (req, res) => {
     );
 
     await publishOutbox(db, kafka);
+    
     res.status(202).json({ reservationId, status: "PENDING" });
   } catch (err) {
     console.error(err);
@@ -38,12 +40,14 @@ app.post("/reservations", async (req, res) => {
   }
 });
 
+// Fetch reservation by ID
 app.get("/reservations/:id", async (req, res) => {
   const [rows] = await db.query("SELECT * FROM reservation WHERE id=?", [req.params.id]);
   if (rows.length === 0) return res.status(404).send({ error: "Not found" });
   res.json(rows[0]);
 });
 
+// (Optional) List passengers
 app.get("/passengers", async (req, res) => {
   const [rows] = await db.query("SELECT * FROM passenger");
   res.json(rows);
@@ -52,4 +56,5 @@ app.get("/passengers", async (req, res) => {
 // Start consumer for payment events
 startPaymentConsumer();
 
+// Start HTTP server
 app.listen(3000, () => console.log("Booking service running on :3000"));
