@@ -1,0 +1,9 @@
+{
+  "development": {
+    "username": "root",
+    "password": "password",
+    "database": "airline_db",
+    "host": "db",
+    "dialect": "mysql"
+  }
+}
