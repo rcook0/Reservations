@@ -47,13 +47,17 @@ reset:
 	docker-compose up --build -d
 	$(MAKE) db-init
 
-# Run a full demo: reset -> seed -> reservation -> check both DBs
+# Full demo: reset -> seed -> reservation -> show API JSON + DBs
 demo: reset
-	@echo ">>> Creating test reservation..."
-	$(MAKE) test-reservation
-	@sleep 5
-	@echo ">>> Checking reservations (Booking DB):"
-	$(MAKE) check-reservations
-	@echo ">>> Checking payments (Payment DB):"
-	$(MAKE) check-payments
+	@echo ">>> Creating test reservation (API response):"
+	RES=$$(curl -s -X POST http://localhost:3000/api/reservations \
+	  -H "Content-Type: application/json" \
+	  -d '{"passenger_id":1,"flight_number":1001,"seat_number":"12A"}'); \
+	echo $$RES | jq; \
+	ID=$$(echo $$RES | jq -r '.reservationId'); \
+	sleep 5; \
+	echo ">>> Fetching reservation via API:"; \
+	curl -s http://localhost:4001/reservations/$$ID | jq; \
+	echo ">>> Fetching payment via API:"; \
+	curl -s http://localhost:4002/payments/$$ID | jq
 
