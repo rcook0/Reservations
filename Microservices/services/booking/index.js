@@ -38,6 +38,13 @@ app.post("/reservations", async (req, res) => {
   }
 });
 
+app.get("/reservations/:id", async (req, res) => {
+  const [rows] = await db.query("SELECT * FROM reservation WHERE id=?", [req.params.id]);
+  if (rows.length === 0) return res.status(404).send({ error: "Not found" });
+  res.json(rows[0]);
+});
+
+
 // Start consumer for payment events
 startPaymentConsumer();
 
