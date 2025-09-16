@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Airline {
+  code   String   @id
+  name   String
+  Flight Flight[]
+}
+
+model Flight {
+  flight_number     Int     @id
+  airline_code      String
+  aircraft          String?
+  departure_airport String
+  arrival_airport   String
+  mileage           Int
+  airline           Airline @relation(fields: [airline_code], references: [code])
+  Seat              Seat[]
+}
+
+model Passenger {
+  id       Int    @id @default(autoincrement())
+  forename String
+  surname  String
+  Reserve  Reserve[]
+}
+
+model Seat {
+  id             Int      @id @default(autoincrement())
+  departure_date DateTime
+  seat_number    String
+  vacant         Boolean  @default(true)
+  flight_number  Int
+  flight         Flight   @relation(fields: [flight_number], references: [flight_number])
+  Reserve        Reserve[]
+}
+
+model Reserve {
+  id           Int       @id @default(autoincrement())
+  passenger_id Int
+  seat_id      Int
+  passenger    Passenger @relation(fields: [passenger_id], references: [id])
+  seat         Seat      @relation(fields: [seat_id], references: [id])
+}
