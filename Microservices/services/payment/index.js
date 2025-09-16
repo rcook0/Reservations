@@ -35,10 +35,16 @@ consumer.run({
   }
 });
 
-app.listen(3000, () => console.log("Payment service running on :3000"));
-
-app.get("/reservations/:id", async (req, res) => {
-  const [rows] = await db.query("SELECT * FROM reservation WHERE id=?", [req.params.id]);
+// REST endpoint to fetch a payment by reservationId
+app.get("/payments/:reservationId", async (req, res) => {
+  const [rows] = await db.query(
+    "SELECT * FROM payment WHERE reservation_id=?",
+    [req.params.reservationId]
+  );
   if (rows.length === 0) return res.status(404).send({ error: "Not found" });
   res.json(rows[0]);
 });
+
+app.listen(3000, () => console.log("Payment service running on :3000"));
+
+
