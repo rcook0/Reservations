@@ -1,0 +1,12 @@
+airline-reservation/
+├── server.js
+├── db.js
+├── routes/
+│   ├── airlines.js
+│   ├── flights.js
+│   ├── reservations.js
+├── middleware/
+│   ├── auth.js
+│   ├── validate.js
+│   └── logger.js
+└── package.json
