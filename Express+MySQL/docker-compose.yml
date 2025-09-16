@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: airline_app
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=password
+      - DB_NAME=airline_db
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:10.11
+    container_name: airline_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: airline_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+
+volumes:
+  db_data:
