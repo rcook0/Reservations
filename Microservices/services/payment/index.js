@@ -36,3 +36,9 @@ consumer.run({
 });
 
 app.listen(3000, () => console.log("Payment service running on :3000"));
+
+app.get("/reservations/:id", async (req, res) => {
+  const [rows] = await db.query("SELECT * FROM reservation WHERE id=?", [req.params.id]);
+  if (rows.length === 0) return res.status(404).send({ error: "Not found" });
+  res.json(rows[0]);
+});
