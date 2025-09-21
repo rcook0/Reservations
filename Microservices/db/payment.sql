@@ -5,7 +5,6 @@ CREATE TABLE payment (
   amount DECIMAL(10,2),
   currency CHAR(3)
 );
-
 CREATE TABLE outbox (
   id INT AUTO_INCREMENT PRIMARY KEY,
   type VARCHAR(50),
