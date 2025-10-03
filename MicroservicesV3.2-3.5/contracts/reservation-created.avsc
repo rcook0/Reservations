@@ -1,0 +1,27 @@
+{
+  "type": "record",
+  "name": "ReservationCreated",
+  "namespace": "airline.booking",
+  "fields": [
+    {
+      "name": "id",
+      "type": "int"
+    },
+    {
+      "name": "passengerId",
+      "type": "int"
+    },
+    {
+      "name": "flightNumber",
+      "type": "int"
+    },
+    {
+      "name": "seatNumber",
+      "type": "string"
+    },
+    {
+      "name": "status",
+      "type": "string"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: booking }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: booking } }
+  template:
+    metadata: { labels: { app: booking } }
+    spec:
+      containers:
+      - name: booking
+        image: yourrepo/booking:latest
+        ports: [{ containerPort: 3000 }]
+        env:
+        - { name: DB_HOST, value: "db-booking" }
+        - { name: DB_USER, value: "root" }
+        - { name: DB_PASSWORD, value: "password" }
+        - { name: DB_NAME, value: "booking" }
+        - { name: KAFKA_BROKERS, value: "kafka:9092" }
+        - { name: SCHEMA_REGISTRY_URL, value: "http://kafka:8081" }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: booking }
+spec:
+  selector: { app: booking }
+  ports:
+  - port: 3000
+    targetPort: 3000

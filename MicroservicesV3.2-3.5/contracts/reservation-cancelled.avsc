@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "ReservationCancelled",
+  "namespace": "airline.booking",
+  "fields": [
+    {
+      "name": "id",
+      "type": "int"
+    },
+    {
+      "name": "reason",
+      "type": "string"
+    }
+  ]
+}

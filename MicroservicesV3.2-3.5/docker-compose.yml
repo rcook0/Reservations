@@ -1,0 +1,63 @@
+version: "3.9"
+services:
+  db-booking:
+    image: mariadb:10.11
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: booking
+    ports: ["3307:3306"]
+
+  db-payment:
+    image: mariadb:10.11
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: payment
+    ports: ["3308:3306"]
+
+  kafka:
+    image: docker.redpanda.com/redpanda/redpanda:latest
+    command: >
+      redpanda start --overprovisioned --smp 1 --memory 512M --reserve-memory 0M
+      --node-id 0 --check=false --set enable_schema_registry=true
+    ports: ["9092:9092", "8081:8081"]
+
+  booking:
+    build: ./services/booking
+    environment:
+      - DB_HOST=db-booking
+      - DB_USER=root
+      - DB_PASSWORD=password
+      - DB_NAME=booking
+      - KAFKA_BROKERS=kafka:9092
+      - SCHEMA_REGISTRY_URL=http://kafka:8081
+    depends_on: [db-booking, kafka]
+    ports: ["4001:3000"]
+
+  payment:
+    build: ./services/payment
+    environment:
+      - DB_HOST=db-payment
+      - DB_USER=root
+      - DB_PASSWORD=password
+      - DB_NAME=payment
+      - KAFKA_BROKERS=kafka:9092
+      - SCHEMA_REGISTRY_URL=http://kafka:8081
+    depends_on: [db-payment, kafka]
+    ports: ["4002:3000"]
+
+  notification:
+    build: ./services/notification
+    environment:
+      - KAFKA_BROKERS=kafka:9092
+      - SCHEMA_REGISTRY_URL=http://kafka:8081
+    depends_on: [kafka]
+    ports: ["4003:3000"]
+
+  gateway:
+    build: ./gateway
+    environment:
+      - BOOKING_URL=http://booking:3000
+      - PAYMENT_URL=http://payment:3000
+      - JWT_SECRET=devsecret
+    ports: ["3000:3000"]
+    depends_on: [booking, payment, notification]
