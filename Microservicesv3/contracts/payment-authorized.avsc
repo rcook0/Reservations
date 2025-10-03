@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "PaymentAuthorized",
+  "namespace": "airline.payment",
+  "fields": [
+    {
+      "name": "reservationId",
+      "type": "int"
+    }
+  ]
+}

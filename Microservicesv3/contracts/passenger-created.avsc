@@ -1,0 +1,19 @@
+{
+  "type": "record",
+  "name": "PassengerCreated",
+  "namespace": "airline.passenger",
+  "fields": [
+    {
+      "name": "id",
+      "type": "int"
+    },
+    {
+      "name": "forename",
+      "type": "string"
+    },
+    {
+      "name": "surname",
+      "type": "string"
+    }
+  ]
+}
