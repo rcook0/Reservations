@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "PaymentFailed",
+  "namespace": "airline.payment",
+  "fields": [
+    {
+      "name": "reservationId",
+      "type": "int"
+    },
+    {
+      "name": "reason",
+      "type": "string"
+    }
+  ]
+}
