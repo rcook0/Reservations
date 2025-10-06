@@ -1,19 +1,11 @@
-services:
-  # ... existing booking, payment, gateway, kafka, dbs
+global:
+  scrape_interval: 5s
 
-  prometheus:
-    image: prom/prometheus:latest
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
-    depends_on:
-      - booking
-      - payment
+scrape_configs:
+  - job_name: "booking"
+    static_configs:
+      - targets: ["booking:3000"]
 
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3001:3000"
-    depends_on:
-      - prometheus
+  - job_name: "payment"
+    static_configs:
+      - targets: ["payment:3000"]
