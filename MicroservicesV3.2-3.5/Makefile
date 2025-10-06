@@ -83,3 +83,10 @@ demo: reset
 	curl -s http://localhost:4001/reservations/$$ID2 | jq; \
 	echo ">>> Payment 2 via API:"; \
 	curl -s http://localhost:4002/payments/$$ID2 | jq
+
+metrics:
+	@echo ">>> Booking service metrics:" 
+	curl -s http://localhost:4001/metrics | head -20
+	@echo ""
+	@echo ">>> Payment service metrics:"
+	curl -s http://localhost:4002/metrics | head -20
