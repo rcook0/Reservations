@@ -37,6 +37,8 @@ app.use("/api/payment", auth, writeLimiter, proxy(paymentUrl, {
   proxyReqPathResolver: req => req.originalUrl.replace("/api/payment", ""),
 }));
 
+//app.use("/api/reservations", proxy(bookingUrl));
+
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.listen(3000, () => console.log("Gateway on :3000"));
