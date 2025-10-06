@@ -18,7 +18,7 @@ const db = await mysql.createPool({
   database: process.env.DB_NAME 
 });
 
-
+// Kafka client
 const kafka = new Kafka({ brokers: process.env.KAFKA_BROKERS.split(",") });
 const producer = kafka.producer();
 await producer.connect();
@@ -72,9 +72,15 @@ app.post("/reservations", async (req, res) => {
     
     const msg = { reservationId, amount: 450, currency: "EUR" };
     const payload = await encode("payment.commands-value", msg, localSchemas.paymentReq);
+    // await producer.send({ topic: "payment.commands", messages: [{ value: payload }] });
 
-    await producer.send({ topic: "payment.commands", messages: [{ value: payload }] });
+    await db.query(
+      "INSERT INTO outbox(type,payload) VALUES (?,?)",
+      ["PaymentAuthorizeRequested", JSON.stringify({ reservationId, amount: 450, currency: "EUR" })]
+    );
 
+    await publishOutbox(db, kafka);
+    
     res.status(202).json({ reservationId, status: "PENDING" });
   } catch (e) { 
     console.error(e); 
@@ -107,4 +113,8 @@ app.post("/passengers", async (req, res) => {
   } catch (e) { console.error(e); res.status(500).send("Error creating passenger"); }
 });
 
+// Start Kafka consumer for payment events
+startPaymentConsumer();
+
+// Start HTTP Server
 app.listen(3000, () => console.log("Booking service running on :3000"));
