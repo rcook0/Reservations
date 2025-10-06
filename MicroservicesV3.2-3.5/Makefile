@@ -29,6 +29,10 @@ test-reservation:
 	  -H "Content-Type: application/json" \
 	  -d '{"passenger_id":1,"flight_number":1001,"seat_number":"12A"}' | jq
 
+test-passenger:
+	curl -s -X POST http://localhost:4001/passengers \
+	  -H "Content-Type: application/json" \
+	  -d '{"forename":"Charlie","surname":"Brown"}' | jq
 
 token:
 	@node -e "console.log(require('jsonwebtoken').sign({sub:'demo-user'}, process.env.JWT_SECRET || 'devsecret'))"
