@@ -49,8 +49,6 @@ async function encodeEvent(obj, subject, fallbackType) {
   return fallbackType.toBuffer(obj);
 }
 
-await consumer.subscribe({ topic: "payment.commands", fromBeginning: true });
-
 consumer.run({
   eachMessage: async ({ message }) => {
     const evt = decodePaymentCommand(message.value);
