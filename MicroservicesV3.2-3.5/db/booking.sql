@@ -6,10 +6,20 @@ CREATE TABLE IF NOT EXISTS reservation (
   status ENUM('PENDING','CONFIRMED','FAILED') DEFAULT 'PENDING'
 );
 
+CREATE TABLE IF NOT EXISTS outbox (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  type VARCHAR(50),
+  payload JSON,
+  published BOOLEAN DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS passenger (
   id INT AUTO_INCREMENT PRIMARY KEY,
   forename VARCHAR(50),
   surname VARCHAR(50)
 );
 
-INSERT INTO passenger (forename, surname) VALUES ('Alice','Smith'),('Bob','Johnson');
+-- Seed passengers
+INSERT INTO passenger (forename, surname) VALUES 
+  ('Alice','Smith'),
+  ('Bob','Johnson');
