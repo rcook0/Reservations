@@ -35,6 +35,8 @@ const kafka = new Kafka({ brokers: process.env.KAFKA_BROKERS.split(",") });
 const producer = kafka.producer();
 await producer.connect();
 
+
+
 const registryUrl = process.env.SCHEMA_REGISTRY_URL;
 let registry = null;
 if (registryUrl) registry = new SchemaRegistry({ host: registryUrl });
@@ -114,6 +116,11 @@ app.get("/passengers", async (req, res) => {
   res.json(rows);
 });
 
+// Load schema
+const passengerSchema = avro.Type.forSchema(
+  JSON.parse(fs.readFileSync("./contracts/passenger-created.avsc"))
+);
+
 // Create passenger -> publish PassengerCreated
 app.post("/passengers", async (req, res) => {
   const { forename, surname } = req.body;
@@ -121,10 +128,29 @@ app.post("/passengers", async (req, res) => {
   try {
     const [r] = await db.query("INSERT INTO passenger (forename, surname) VALUES (?,?)", [forename, surname]);
     const id = r.insertId;
-    const payload = await encode("passenger.events-value", { id, forename, surname }, localSchemas.passengerCreated);
-    await producer.send({ topic: "passenger.events", messages: [{ value: payload }] });
+    
+    //const payload = await encode("passenger.events-value", { id, forename, surname }, localSchemas.passengerCreated);
+    //await producer.send({ topic: "passenger.events", messages: [{ value: payload }] });
+    //
+    
+    // Build event
+    const event = { id: passengerId, forename, surname };
+    const buffer = passengerSchema.toBuffer(event);
+
+    // Publish Avro event
+    const producer = kafka.producer();
+    await producer.connect();
+    await producer.send({
+      topic: "passenger.events",
+      messages: [{ value: buffer }]
+    });
+    await producer.disconnect();
     res.status(201).json({ id, forename, surname });
-  } catch (e) { console.error(e); res.status(500).send("Error creating passenger"); }
+    
+  } catch (e) { 
+    console.error(e); 
+    res.status(500).send("Error creating passenger"); 
+  }
 });
 
 app.get("/metrics", async (_req, res) => {
