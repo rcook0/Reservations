@@ -8,12 +8,23 @@ import { SchemaRegistry } from "@kafkajs/confluent-schema-registry";
 const app = express();
 app.use(express.json());
 
-const db = await mysql.createPool({ host: process.env.DB_HOST, user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME });
+// DB connection
+const db = await mysql.createPool({ 
+  host: process.env.DB_HOST, 
+  user: process.env.DB_USER, 
+  password: process.env.DB_PASSWORD, 
+  database: process.env.DB_NAME 
+});
+
+// Kafka client
 const kafka = new Kafka({ brokers: process.env.KAFKA_BROKERS.split(",") });
 const consumer = kafka.consumer({ groupId: "payment-service" });
 const producer = kafka.producer();
+
+// Subscribe to booking events
 await consumer.connect();
 await producer.connect();
+await consumer.subscribe({ topic: "payment.commands", fromBeginning: true });
 
 const registryUrl = process.env.SCHEMA_REGISTRY_URL;
 let registry = null;
@@ -54,25 +65,34 @@ consumer.run({
     }
 
     try {
-      await db.query("INSERT INTO payment (reservation_id, status, amount, currency) VALUES (?,?,?,?)",
-        [evt.reservationId, "AUTHORIZED", evt.amount, evt.currency]);
+      // Store payment
+      await db.query
+        ("INSERT INTO payment (reservation_id, status, amount, currency) VALUES (?,?,?,?)",
+        [evt.reservationId, "AUTHORIZED", evt.amount, evt.currency]
+        );
       const ok = { reservationId: evt.reservationId };
       const payload = await encodeEvent(ok, "payment.events-value", tAuth);
+
+      // Publish back to booking
       await producer.send({ topic: "payment.events", messages: [{ value: payload }] });
       console.log("PaymentAuthorized published", ok);
     } catch (e) {
       console.error("DB error:", e);
       const fail = { reservationId: evt.reservationId, reason: "DB error" };
       const payload = await encodeEvent(fail, "payment.events-value", tFailed);
-      await producer.send({ topic: "payment.events", messages: [{ value: payload }] });
+      await producer.send
+        ({ topic: "payment.events", messages: [{ value: payload }] }
+        );
     }
   }
 });
 
+// REST endpoint to fetch a payment by reservationId
 app.get("/payments/:reservationId", async (req, res) => {
   const [rows] = await db.query("SELECT * FROM payment WHERE reservation_id=?", [req.params.reservationId]);
   if (rows.length === 0) return res.status(404).json({ error: "Not found" });
   res.json(rows[0]);
 });
 
+// Start HTTP server
 app.listen(3000, () => console.log("Payment service running on :3000"));
