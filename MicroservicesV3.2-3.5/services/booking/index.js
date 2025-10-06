@@ -4,11 +4,21 @@ import { Kafka } from "kafkajs";
 import avro from "avsc";
 import fs from "fs";
 import { SchemaRegistry, readAVSCAsync } from "@kafkajs/confluent-schema-registry";
+import { publishOutbox } from "./outboxPublisher.js";
+import { startPaymentConsumer } from "./consumers/paymentEvents.js";
 
 const app = express();
 app.use(express.json());
 
-const db = await mysql.createPool({ host: process.env.DB_HOST, user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME });
+// DB connection
+const db = await mysql.createPool({ 
+  host: process.env.DB_HOST, 
+  user: process.env.DB_USER, 
+  password: process.env.DB_PASSWORD, 
+  database: process.env.DB_NAME 
+});
+
+
 const kafka = new Kafka({ brokers: process.env.KAFKA_BROKERS.split(",") });
 const producer = kafka.producer();
 await producer.connect();
@@ -50,15 +60,26 @@ function encode(subject, obj, fallbackType) {
 // Create reservation -> publish PaymentAuthorizeRequested
 app.post("/reservations", async (req, res) => {
   const { passenger_id, flight_number, seat_number } = req.body;
-  if (!passenger_id || !flight_number || !seat_number) return res.status(400).json({error:"Missing fields"});
+  if (!passenger_id || !flight_number || !seat_number) 
+    return res.status(400).json({error:"Missing fields"});
+  
   try {
-    const [r] = await db.query("INSERT INTO reservation (passenger_id, flight_number, seat_number, status) VALUES (?,?,?, 'PENDING')", [passenger_id, flight_number, seat_number]);
+    const [r] = await db.query(
+      "INSERT INTO reservation (passenger_id, flight_number, seat_number, status) VALUES (?,?,?, 'PENDING')", 
+      [passenger_id, flight_number, seat_number]
+    );
     const reservationId = r.insertId;
+    
     const msg = { reservationId, amount: 450, currency: "EUR" };
     const payload = await encode("payment.commands-value", msg, localSchemas.paymentReq);
+
     await producer.send({ topic: "payment.commands", messages: [{ value: payload }] });
+
     res.status(202).json({ reservationId, status: "PENDING" });
-  } catch (e) { console.error(e); res.status(500).send("Error creating reservation"); }
+  } catch (e) { 
+    console.error(e); 
+    res.status(500).send("Error creating reservation"); 
+  }
 });
 
 // Get reservation by ID
@@ -66,6 +87,11 @@ app.get("/reservations/:id", async (req, res) => {
   const [rows] = await db.query("SELECT * FROM reservation WHERE id=?", [req.params.id]);
   if (rows.length === 0) return res.status(404).json({error:"Not found"});
   res.json(rows[0]);
+});
+
+app.get("/passengers", async (req, res) => {
+  const [rows] = await db.query("SELECT * FROM passenger");
+  res.json(rows);
 });
 
 // Create passenger -> publish PassengerCreated
