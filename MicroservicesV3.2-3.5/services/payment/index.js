@@ -89,7 +89,10 @@ consumer.run({
 
 // REST endpoint to fetch a payment by reservationId
 app.get("/payments/:reservationId", async (req, res) => {
-  const [rows] = await db.query("SELECT * FROM payment WHERE reservation_id=?", [req.params.reservationId]);
+  const [rows] = await db.query(
+    "SELECT * FROM payment WHERE reservation_id=?",
+    [req.params.reservationId]
+  );
   if (rows.length === 0) return res.status(404).json({ error: "Not found" });
   res.json(rows[0]);
 });
