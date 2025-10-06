@@ -5,3 +5,10 @@ CREATE TABLE IF NOT EXISTS payment (
   amount DECIMAL(10,2),
   currency CHAR(3)
 );
+
+CREATE TABLE IF NOT EXISTS outbox (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  type VARCHAR(50),
+  payload JSON,
+  published BOOLEAN DEFAULT 0
+);
