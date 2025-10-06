@@ -1,12 +1,22 @@
 import express from "express";
 import mysql from "mysql2/promise";
 import { Kafka } from "kafkajs";
+import client from "prom-client";
 import avro from "avsc";
 import fs from "fs";
 import { SchemaRegistry } from "@kafkajs/confluent-schema-registry";
 
 const app = express();
 app.use(express.json());
+
+// Prometheus metrics
+const register = new client.Registry();
+client.collectDefaultMetrics({ register });
+const paymentsCounter = new client.Counter({
+  name: "payments_processed_total",
+  help: "Number of payments processed"
+});
+register.registerMetric(paymentsCounter);
 
 // DB connection
 const db = await mysql.createPool({ 
@@ -72,7 +82,8 @@ consumer.run({
       await db.query
         ("INSERT INTO payment (reservation_id, status, amount, currency) VALUES (?,?,?,?)",
         [evt.reservationId, "AUTHORIZED", evt.amount, evt.currency]
-        );
+      );
+      paymentsCounter.inc();
       
       //const ok = { reservationId: evt.reservationId };
       //const payload = await encodeEvent(ok, "payment.events-value", tAuth);
@@ -111,6 +122,11 @@ app.get("/payments/:reservationId", async (req, res) => {
   );
   if (rows.length === 0) return res.status(404).json({ error: "Not found" });
   res.json(rows[0]);
+});
+
+app.get("/metrics", async (_req, res) => {
+  res.set("Content-Type", register.contentType);
+  res.end(await register.metrics());
 });
 
 // Start HTTP server
