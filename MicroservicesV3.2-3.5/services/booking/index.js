@@ -1,6 +1,7 @@
 import express from "express";
 import mysql from "mysql2/promise";
 import { Kafka } from "kafkajs";
+import client from "prom-client";
 import avro from "avsc";
 import fs from "fs";
 import { SchemaRegistry, readAVSCAsync } from "@kafkajs/confluent-schema-registry";
@@ -9,6 +10,17 @@ import { startPaymentConsumer } from "./consumers/paymentEvents.js";
 
 const app = express();
 app.use(express.json());
+
+
+// Prometheus metrics
+const register = new client.Registry();
+client.collectDefaultMetrics({ register });
+const reservationsCounter = new client.Counter({
+  name: "reservations_created_total",
+  help: "Number of reservations created"
+});
+register.registerMetric(reservationsCounter);
+
 
 // DB connection
 const db = await mysql.createPool({ 
@@ -70,6 +82,8 @@ app.post("/reservations", async (req, res) => {
     );
     const reservationId = r.insertId;
     
+    reservationsCounter.inc();
+    
     const msg = { reservationId, amount: 450, currency: "EUR" };
     const payload = await encode("payment.commands-value", msg, localSchemas.paymentReq);
     // await producer.send({ topic: "payment.commands", messages: [{ value: payload }] });
@@ -111,6 +125,11 @@ app.post("/passengers", async (req, res) => {
     await producer.send({ topic: "passenger.events", messages: [{ value: payload }] });
     res.status(201).json({ id, forename, surname });
   } catch (e) { console.error(e); res.status(500).send("Error creating passenger"); }
+});
+
+app.get("/metrics", async (_req, res) => {
+  res.set("Content-Type", register.contentType);
+  res.end(await register.metrics());
 });
 
 // Start Kafka consumer for payment events
