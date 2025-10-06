@@ -60,9 +60,13 @@ demo:
 # Full demo: reset -> seed -> reservation -> show API JSON + DBs
 demo: reset
 	@echo ">>> Creating test reservation (API response):"
-	$(MAKE) test-reservation
-	@sleep 5
-	@echo ">>> Booking DB - reservations:"
-	$(MAKE) check-reservations
-	@echo ">>> Payment DB - payments:"
-	$(MAKE) check-payments
+	RES=$$(curl -s -X POST http://localhost:3000/api/reservations \
+	  -H "Content-Type: application/json" \
+	  -d '{"passenger_id":1,"flight_number":1001,"seat_number":"12A"}'); \
+	echo $$RES | jq; \
+	ID=$$(echo $$RES | jq -r '.reservationId'); \
+	sleep 5; \
+	echo ">>> Fetching reservation via API:"; \
+	curl -s http://localhost:4001/reservations/$$ID | jq; \
+	echo ">>> Fetching payment via API:"; \
+	curl -s http://localhost:4002/payments/$$ID | jq
