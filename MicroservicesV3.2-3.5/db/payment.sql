@@ -3,7 +3,9 @@ CREATE TABLE IF NOT EXISTS payment (
   reservation_id INT NOT NULL,
   status ENUM('REQUESTED','AUTHORIZED','FAILED') NOT NULL,
   amount DECIMAL(10,2),
-  currency CHAR(3)
+  currency CHAR(3),
+  provider_ref VARCHAR(64),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS outbox (
