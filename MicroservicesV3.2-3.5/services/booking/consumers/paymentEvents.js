@@ -15,15 +15,30 @@ export async function startPaymentConsumer() {
   await consumer.connect();
   await consumer.subscribe({ topic: "payment.events", fromBeginning: true });
 
-  await consumer.run({
+  consumer.run({
     eachMessage: async ({ message }) => {
       const evt = JSON.parse(message.value.toString());
       console.log("Booking received payment event", evt);
-
-      if (evt.type === "PaymentAuthorized") {
-        await db.query("UPDATE reservation SET status='CONFIRMED' WHERE id=?", [evt.reservationId]);
-      } else if (evt.type === "PaymentFailed") {
-        await db.query("UPDATE reservation SET status='FAILED' WHERE id=?", [evt.reservationId]);
+      let attempts = 0;
+      const maxRetries = 3;
+      while (attempts < maxRetries) {
+        try {
+          if (evt.type === "PaymentAuthorized") {
+            await db.query("UPDATE reservation SET status='CONFIRMED' WHERE id=?", [evt.reservationId]);
+          } else if (evt.type === "PaymentFailed") {
+            await db.query("UPDATE reservation SET status='FAILED' WHERE id=?", [evt.reservationId]);
+          }
+          return;
+        } catch (err) {
+          attempts++;
+          console.error(`Error updating reservation (attempt ${attempts}):`, err);
+          if (attempts < maxRetries) {
+            const delay = 1000 * Math.pow(2, attempts);
+            await new Promise(res => setTimeout(res, delay));
+          } else {
+            console.error("Reservation update permanently failed:", evt);
+          }
+        }
       }
     }
   });
