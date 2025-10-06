@@ -1,1 +1,0 @@
-# MicroservicesV3 – Step 1 (Avro, Full Code)\n\nRun:\n\n```bash\nmake reset\nmake demo\nmake test-passenger\n```\n
