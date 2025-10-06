@@ -51,39 +51,57 @@ async function encodeEvent(obj, subject, fallbackType) {
 
 consumer.run({
   eachMessage: async ({ message }) => {
-    const evt = decodePaymentCommand(message.value);
-    const shouldFail = evt.reservationId % 2 === 0;
+    const evt = JSON.parse(message.value.toString());
+    //const shouldFail = evt.reservationId % 2 === 0;
+    console.log("Processing payment event", evt);
 
-    if (shouldFail) {
+    /*if (shouldFail) {
       const fail = { reservationId: evt.reservationId, reason: "Card declined (even IDs demo)" };
       const payload = await encodeEvent(fail, "payment.events-value", tFailed);
       await producer.send({ topic: "payment.events", messages: [{ value: payload }] });
       console.warn("PaymentFailed published", fail);
       return;
-    }
+    }*/
 
+    let attempts = 0;
+    const maxRetries = 3;
+
+    while (attempts < maxRetries) {
     try {
       // Store payment
       await db.query
         ("INSERT INTO payment (reservation_id, status, amount, currency) VALUES (?,?,?,?)",
         [evt.reservationId, "AUTHORIZED", evt.amount, evt.currency]
         );
-      const ok = { reservationId: evt.reservationId };
-      const payload = await encodeEvent(ok, "payment.events-value", tAuth);
+      
+      //const ok = { reservationId: evt.reservationId };
+      //const payload = await encodeEvent(ok, "payment.events-value", tAuth);
 
       // Publish back to booking
-      await producer.send({ topic: "payment.events", messages: [{ value: payload }] });
+      await producer.send({ 
+        topic: "payment.events", 
+        messages: [{ value: JSON.stringify({ type: "PaymentAuthorized", reservationId: evt.reservationId }) }]
+      });
       console.log("PaymentAuthorized published", ok);
+
+      // success
+      return;
     } catch (e) {
-      console.error("DB error:", e);
-      const fail = { reservationId: evt.reservationId, reason: "DB error" };
-      const payload = await encodeEvent(fail, "payment.events-value", tFailed);
-      await producer.send
-        ({ topic: "payment.events", messages: [{ value: payload }] }
-        );
-    }
-  }
-});
+      attempts++;
+      console.error(`Error processing payment (attempt ${attempts}):`, err);
+
+      if (attempts < maxRetries) {
+          // Exponential backoff
+          const delay = 1000 * Math.pow(2, attempts);
+          await new Promise(res => setTimeout(res, delay));
+        } else {
+          console.error("Message permanently failed after retries:", evt);
+        }
+      }
+    } // try
+    } // while
+  } // eachMsg
+}); // cons.run()
 
 // REST endpoint to fetch a payment by reservationId
 app.get("/payments/:reservationId", async (req, res) => {
